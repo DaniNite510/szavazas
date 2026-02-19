@@ -190,6 +190,34 @@ app.put('/felhasznalonev', auth, async (req,res) => {
     }
 })
 
+app.put('/jelszo', async(req,res)=>{
+    const {jelenlegiJelszo, ujJelszo}= req.body
+    if (!jelenlegiJelszo || !ujJelszo)
+    {
+        return res.status(400).json({message: "Hiányzó bemeneti adatok"})
+    }
+    try {
+        
+            const sql = 'SELECT * FROM felhasznalok WHERE id = ?'
+            const [rows] = await db.query(sql, [req.user.id])
+            const user = rows[0];
+            const hashJelszo = user.jelszo
+            const ok = bcrypt.compare(jelenlegiJelszo, hashJelszo)
+            if(!ok) {
+                return res.status(401).json({message: ""})
+            }
+            const hashUjJelszo = await bcrypt.hash(ujJelszo, 10)
+
+            const sql2 = "UPDATE felhasznalok SET jelszo = ? Where id = ?"
+            await db.query(sql2, [hashJelszo, req.user.id]);
+            return res.status(200).json({message: "Sikeresen módosult a jelszavad"})
+    }
+    catch (error) {
+        console.log(error)
+        res.status(500).json({message: "Szerverhiba"})
+    }
+})
+
 app.delete('./fiokom', auth,async (req, res))
 {
     try {
